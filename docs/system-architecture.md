@@ -18,6 +18,11 @@ graph TB
         Auth[Authentication Module]
         Routes[API Routes]
         Services[Business Logic]
+        LLM[LLM Service]
+    end
+    
+    subgraph "External Services"
+        Groq[Groq API]
     end
     
     subgraph "Database Layer"
@@ -33,6 +38,8 @@ graph TB
     FastAPI --> Routes
     Routes --> Services
     Services --> PostgreSQL
+    Services --> LLM
+    LLM -->|API Calls| Groq
 ```
 
 ## Service Communication Flow
@@ -68,6 +75,7 @@ sequenceDiagram
 - **Database**: PostgreSQL 15
 - **Authentication**: JWT (python-jose)
 - **Password Hashing**: bcrypt (via passlib)
+- **LLM Integration**: Groq API (llama-3.3-70b-versatile with llama-3.1-8b-instant fallback)
 
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
@@ -112,5 +120,9 @@ sequenceDiagram
   ├── POST   /             - Send message
   ├── PUT    /{message_id}/read - Mark as read
   └── GET    /unread-count - Get unread count
+
+/api/family/
+  ├── POST   /summary                    - Generate family daily summary (requires Groq API key)
+  └── POST   /users/{user_id}/summary    - Generate user summary and sentiment (requires Groq API key)
 ```
 

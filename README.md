@@ -10,6 +10,7 @@ A minimal Twitter-like social media application for small family groups (5-10 us
 - User profiles
 - Keyword search for posts
 - Direct messaging between users
+- **Family Insights** - AI-powered daily summaries and sentiment analysis (requires Groq API key)
 
 ## Tech Stack
 
@@ -115,6 +116,31 @@ The application follows a microservices architecture with:
 - **Database**: PostgreSQL storing all application data
 
 Authentication uses JWT tokens with bcrypt password hashing. See the [authentication flow documentation](./docs/authentication-flow.md) for details.
+
+## Family Insights Feature
+
+The Family Insights feature uses AI (via Groq API) to provide:
+- **Daily Family Summary**: AI-generated summary of all family posts for the day
+- **User Sentiment Analysis**: Individual user summaries with mood/sentiment analysis based on their posts and messages
+
+### Setup
+
+1. Get a Groq API key from [Groq Console](https://console.groq.com)
+2. Navigate to the "Family" tab in the application
+3. Enter your Groq API key (stored locally in your browser, per user)
+4. Click "Request Family Summary" to generate AI summaries
+
+### Features
+
+- **On-demand generation**: Summaries are generated on-demand, not stored in the database
+- **User-specific API keys**: Each user's API key is stored separately in browser localStorage
+- **Automatic fallback**: If the primary model (`llama-3.3-70b-versatile`) hits rate limits, it automatically falls back to `llama-3.1-8b-instant`
+- **Privacy**: API keys are never sent to the server except during API calls to Groq
+
+### API Endpoints
+
+- `POST /api/family/summary` - Generate family daily summary
+- `POST /api/family/users/{user_id}/summary` - Generate user-specific summary and sentiment
 
 ## API Endpoints
 

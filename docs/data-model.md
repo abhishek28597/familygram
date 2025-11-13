@@ -216,6 +216,16 @@ Full-text search is implemented using PostgreSQL's LIKE operator:
 - Case-insensitive matching
 - Can be enhanced with PostgreSQL full-text search (tsvector) for better performance
 
+## Family Insights Feature
+
+The Family Insights feature (AI-powered summaries and sentiment analysis) does **not** store any data in the database:
+- All summaries are generated on-demand via Groq API
+- No database tables are created for this feature
+- API keys are stored in browser localStorage (per user), not in the database
+- Generated summaries are returned to the frontend but not persisted
+
+The feature uses existing data (Posts and Messages) to generate summaries, but the summaries themselves are ephemeral.
+
 ## Future Enhancements
 
 1. **Full-Text Search**: Implement PostgreSQL tsvector for better search
