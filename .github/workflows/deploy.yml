@@ -16,14 +16,25 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Deploy Backend to Render
-        uses: johnagan/render-deploy@v2
-        with:
-          serviceId: ${{ secrets.RENDER_SERVICE_ID_BACKEND }}
-          apiKey: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_BACKEND }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d '{"clearBuildCache": false}'
       
       - name: Deploy Frontend to Render
-        uses: johnagan/render-deploy@v2
-        with:
-          serviceId: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}
-          apiKey: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_FRONTEND }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d '{"clearBuildCache": false}'
+      
+      - name: Deployment Status
+        run: |
+          echo "✅ Deployment triggered successfully!"
+          echo "Backend Service ID: ${{ secrets.RENDER_SERVICE_ID_BACKEND }}"
+          echo "Frontend Service ID: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}"
+          echo "Check Render dashboard for deployment status."
 
