@@ -95,8 +95,26 @@ For local development without Docker, you'll need to set up the database and env
 family_gram/
 ├── backend/          # FastAPI backend
 ├── frontend/         # React frontend
+├── docs/            # System design documentation
 └── docker-compose.yml
 ```
+
+## System Design Documentation
+
+Detailed system design diagrams and documentation are available in the [`docs/`](./docs/) folder:
+
+- **[System Architecture](./docs/system-architecture.md)** - High-level architecture, service communication, and technology stack
+- **[Authentication Flow](./docs/authentication-flow.md)** - Complete authentication process, JWT token lifecycle, and security features
+- **[Data Model Design](./docs/data-model.md)** - Entity relationship diagrams, database schema, and data relationships
+
+### Quick Overview
+
+The application follows a microservices architecture with:
+- **Frontend**: React SPA that communicates with backend via REST API
+- **Backend**: FastAPI service handling business logic and authentication
+- **Database**: PostgreSQL storing all application data
+
+Authentication uses JWT tokens with bcrypt password hashing. See the [authentication flow documentation](./docs/authentication-flow.md) for details.
 
 ## API Endpoints
 
