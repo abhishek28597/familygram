@@ -23,6 +23,14 @@ This folder contains detailed system design documentation for the Family Social 
 - Data flow examples
 - Family Insights feature (on-demand, no database storage)
 
+### [Deployment Guide](./deployment-guide.md)
+- Complete Render deployment setup
+- Database configuration
+- Backend and frontend deployment steps
+- Environment variables configuration
+- Troubleshooting guide
+- CI/CD setup with GitHub Actions
+
 ## Diagram Format
 
 All diagrams are created using [Mermaid](https://mermaid.js.org/), which is:
