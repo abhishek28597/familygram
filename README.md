@@ -107,6 +107,7 @@ Detailed system design diagrams and documentation are available in the [`docs/`]
 - **[System Architecture](./docs/system-architecture.md)** - High-level architecture, service communication, and technology stack
 - **[Authentication Flow](./docs/authentication-flow.md)** - Complete authentication process, JWT token lifecycle, and security features
 - **[Data Model Design](./docs/data-model.md)** - Entity relationship diagrams, database schema, and data relationships
+- **[Deployment Guide](./docs/deployment-guide.md)** - Complete guide for deploying to production on Render
 
 ### Quick Overview
 
