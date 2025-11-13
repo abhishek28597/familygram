@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -11,9 +11,30 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 3000
+# Build arguments for API URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-# Run the application
-CMD ["npm", "run", "dev", "--", "--host"]
+# Build the application
+RUN npm run build
 
+# Production stage
+FROM nginx:alpine
+
+# Copy built files to nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
