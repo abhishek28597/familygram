@@ -94,5 +94,19 @@ export const messagesAPI = {
   getUnreadCount: () => api.get('/api/messages/unread-count'),
 };
 
+// Family API
+export const familyAPI = {
+  getFamilySummary: (groqApiKey, date = null) => {
+    const body = { groq_api_key: groqApiKey };
+    if (date) body.date = date;
+    return api.post('/api/family/summary', body);
+  },
+  getUserSummary: (userId, groqApiKey, date = null) => {
+    const body = { groq_api_key: groqApiKey };
+    if (date) body.date = date;
+    return api.post(`/api/family/users/${userId}/summary`, body);
+  },
+};
+
 export default api;
 

@@ -71,8 +71,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear authentication data
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Clear user-specific API key if exists
+    if (user?.id) {
+      localStorage.removeItem(`groq_api_key_${user.id}`);
+    }
+    
+    // Also clear any old non-user-specific API keys (migration cleanup)
+    localStorage.removeItem('groq_api_key');
+    
     setUser(null);
   };
 
