@@ -339,28 +339,41 @@ Render can automatically deploy when you push to the `main` branch:
 
 ### Method 2: GitHub Actions Workflow
 
-For more control, use the GitHub Actions workflow:
+For more control, use the GitHub Actions workflow that triggers Render deployments via API:
 
 1. **Get Render API Key**:
    - Go to Render Dashboard → Account Settings → API Keys
-   - Generate a new API key
-   - Copy the key
+   - Click "Create API Key"
+   - Give it a name (e.g., "GitHub Actions")
+   - Copy the key (you won't see it again!)
 
 2. **Get Service IDs**:
-   - Go to your backend service → Settings
-   - Copy the Service ID from the URL or settings page
-   - Repeat for frontend service
+   - **Backend Service ID**:
+     - Go to your backend service in Render
+     - Look at the URL: `https://dashboard.render.com/web/[SERVICE_ID]`
+     - The Service ID is the long string in the URL
+     - Or go to Settings → scroll to bottom to see Service ID
+   - **Frontend Service ID**:
+     - Repeat the same process for your frontend service
 
 3. **Add GitHub Secrets**:
-   - Go to your GitHub repository → Settings → Secrets and variables → Actions
-   - Add the following secrets:
-     - `RENDER_API_KEY`: Your Render API key
-     - `RENDER_SERVICE_ID_BACKEND`: Your backend service ID
-     - `RENDER_SERVICE_ID_FRONTEND`: Your frontend service ID
+   - Go to your GitHub repository
+   - Navigate to: **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret**
+   - Add these three secrets:
+     - **Name**: `RENDER_API_KEY`
+       **Value**: Your Render API key
+     - **Name**: `RENDER_SERVICE_ID_BACKEND`
+       **Value**: Your backend service ID
+     - **Name**: `RENDER_SERVICE_ID_FRONTEND`
+       **Value**: Your frontend service ID
 
 4. **Workflow is ready**:
    - The workflow (`.github/workflows/deploy.yml`) will automatically run on push to `main`
-   - You can also manually trigger it: Actions → Deploy to Render → Run workflow
+   - You can also manually trigger it: **Actions** → **Deploy to Render** → **Run workflow**
+   - The workflow uses Render's REST API to trigger deployments
+
+**Note**: The workflow triggers deployments but doesn't wait for them to complete. Check the Render dashboard to monitor deployment progress.
 
 See [GitHub Actions Workflow](../.github/workflows/deploy.yml) for the workflow file.
 
