@@ -21,6 +21,7 @@ This folder contains detailed system design documentation for the Family Social 
 - Database schema details
 - Table structures and relationships
 - Data flow examples
+- Family Insights feature (on-demand, no database storage)
 
 ## Diagram Format
 

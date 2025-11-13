@@ -96,6 +96,9 @@ const Home = () => {
           <button onClick={() => navigate('/inbox')} className="btn btn-secondary">
             Inbox
           </button>
+          <button onClick={() => navigate('/family')} className="btn btn-secondary">
+            Family
+          </button>
           <button onClick={logout} className="btn btn-secondary">
             Logout
           </button>

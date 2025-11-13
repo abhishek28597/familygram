@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Inbox from './pages/Inbox';
+import Family from './pages/Family';
 import './index.css';
 
 const PrivateRoute = ({ children }) => {
@@ -36,6 +37,7 @@ function AppRoutes() {
       <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/profile/:userId?" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/inbox" element={<PrivateRoute><Inbox /></PrivateRoute>} />
+      <Route path="/family" element={<PrivateRoute><Family /></PrivateRoute>} />
     </Routes>
   );
 }
