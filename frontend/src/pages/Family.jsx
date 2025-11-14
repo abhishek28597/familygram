@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { usersAPI, familyAPI } from '../services/api';
+import { familyAPI } from '../services/api';
 
 const Family = () => {
   const { user, activeFamily } = useAuth();
@@ -16,8 +16,12 @@ const Family = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadFamilyMembers();
-  }, []);
+    if (activeFamily?.id) {
+      loadFamilyMembers();
+    } else {
+      setFamilyMembers([]);
+    }
+  }, [activeFamily]);
 
   // Separate effect to handle user-specific API key loading
   useEffect(() => {
@@ -54,11 +58,17 @@ const Family = () => {
   }, [user]);
 
   const loadFamilyMembers = async () => {
+    if (!activeFamily?.id) {
+      setFamilyMembers([]);
+      return;
+    }
+    
     try {
-      const response = await usersAPI.getAllUsers();
+      const response = await familyAPI.getFamilyMembers(activeFamily.id);
       setFamilyMembers(response.data);
     } catch (error) {
       console.error('Failed to load family members:', error);
+      setFamilyMembers([]);
     }
   };
 
