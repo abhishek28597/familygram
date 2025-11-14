@@ -14,6 +14,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
+    family_names: List[str] = Field(..., min_items=1, description="List of family names to join")
 
 
 class UserUpdate(BaseModel):
@@ -38,6 +39,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[UUID] = None
+    family_id: Optional[UUID] = None
 
 
 # Post Schemas
@@ -56,6 +58,7 @@ class PostUpdate(BaseModel):
 class PostResponse(PostBase):
     id: UUID
     user_id: UUID
+    family_id: UUID
     created_at: datetime
     updated_at: datetime
     likes_count: int
@@ -117,12 +120,42 @@ class MessageCreate(MessageBase):
 class MessageResponse(MessageBase):
     id: UUID
     sender_id: UUID
+    family_id: UUID
     is_read: bool
     created_at: datetime
     sender: UserResponse
 
     class Config:
         from_attributes = True
+
+
+# Family Schemas
+class FamilyBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class FamilyCreate(FamilyBase):
+    pass
+
+
+class FamilyResponse(FamilyBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class FamilySelection(BaseModel):
+    family_id: UUID
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    families: List[FamilyResponse]
+    selected_family: Optional[FamilyResponse] = None
 
 
 # Search Schemas

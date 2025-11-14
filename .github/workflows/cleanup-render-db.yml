@@ -1,0 +1,63 @@
+name: Cleanup Render Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "CLEAN_DB" to confirm database cleanup (WARNING: This deletes ALL data!)'
+        required: true
+        type: string
+
+jobs:
+  cleanup-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Verify confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "CLEAN_DB" ]; then
+            echo "❌ Confirmation failed. Must type exactly 'CLEAN_DB'"
+            exit 1
+          fi
+          echo "✅ Confirmation verified. Proceeding with database cleanup..."
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -q -r requirements.txt
+
+      - name: Clean Render Database
+        env:
+          DATABASE_URL: ${{ secrets.RENDER_DATABASE_URL }}
+          JWT_SECRET_KEY: "dummy-key-for-cleanup-only"
+          AUTO_CONFIRM: "true"
+        run: |
+          cd backend
+          echo "=========================================="
+          echo "Cleaning Render Production Database"
+          echo "=========================================="
+          echo ""
+          echo "⚠️  WARNING: This will delete ALL data!"
+          echo ""
+          # Run cleanup script (AUTO_CONFIRM env var enables non-interactive mode)
+          python scripts/clean_db.py
+          echo ""
+          echo "✅ Database cleanup completed!"
+
+      - name: Summary
+        run: |
+          echo "## Database Cleanup Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The Render database has been cleaned and all tables have been recreated with the current schema." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify the cleanup was successful in Render dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "- Test the application to ensure everything works correctly" >> $GITHUB_STEP_SUMMARY
+

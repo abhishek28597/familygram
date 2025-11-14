@@ -377,6 +377,76 @@ For more control, use the GitHub Actions workflow that triggers Render deploymen
 
 See [GitHub Actions Workflow](../.github/workflows/deploy.yml) for the workflow file.
 
+## Database Cleanup on Render
+
+When you make data model changes, you may need to clean the Render database and recreate tables with the new schema. There are several ways to do this:
+
+### Method 1: Manual via Render Shell (Safest)
+
+1. Go to your backend service in Render Dashboard
+2. Click on **Shell** tab (terminal icon)
+3. Run the cleanup script:
+   ```bash
+   python /app/scripts/clean_db.py
+   ```
+4. Type `yes` when prompted
+
+**Pros:** Safe, requires explicit confirmation  
+**Cons:** Manual step
+
+### Method 2: Automated via GitHub Actions (Recommended)
+
+This method uses a GitHub Actions workflow to automatically clean the Render database.
+
+#### Setup
+
+1. **Get Render Database URL**:
+   - Go to your Render database dashboard
+   - Copy the **External Database URL** (not internal)
+   - Format: `postgresql://user:password@host:port/database`
+
+2. **Add GitHub Secret**:
+   - Go to your GitHub repository
+   - Navigate to: **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret**
+   - **Name**: `RENDER_DATABASE_URL`
+   - **Value**: Paste your external database URL
+   - Click **Add secret**
+
+#### Usage
+
+1. Go to your GitHub repository
+2. Navigate to: **Actions** → **Cleanup Render Database**
+3. Click **Run workflow**
+4. In the confirmation field, type exactly: `CLEAN_DB`
+5. Click **Run workflow**
+
+⚠️ **WARNING**: This will delete ALL data in your Render database!
+
+The workflow will:
+- Verify your confirmation
+- Connect to the Render database
+- Drop all tables
+- Recreate all tables with the current schema
+- Verify the cleanup was successful
+
+#### Workflow File
+
+The workflow is located at: `.github/workflows/cleanup-render-db.yml`
+
+**Note**: The workflow requires the `RENDER_DATABASE_URL` secret to be set. Make sure to use the **external** database URL (not the internal one used by the backend service).
+
+### Method 3: Render Shell Script (Alternative)
+
+You can also SSH into your Render service and run:
+
+```bash
+# In Render Shell
+cd /app
+python scripts/clean_db.py
+# Type 'yes' when prompted
+```
+
 ## Security Notes
 
 1. **Never commit secrets** to Git
