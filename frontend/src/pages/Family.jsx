@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { usersAPI, familyAPI } from '../services/api';
 
 const Family = () => {
-  const { user } = useAuth();
+  const { user, activeFamily } = useAuth();
   const navigate = useNavigate();
   const [familyMembers, setFamilyMembers] = useState([]);
   const [groqApiKey, setGroqApiKey] = useState('');
@@ -106,21 +106,36 @@ const Family = () => {
   if (!apiKeyEntered) {
     return (
       <div className="container">
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        }}>
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px',
+        padding: '15px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      }}>
+        <div>
           <h1>Family Insights</h1>
+          {activeFamily && (
+            <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '16px' }}>
+              Family: <strong style={{ color: '#2196F3' }}>{activeFamily.name}</strong>
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => navigate('/join-family')} 
+            className="btn btn-primary"
+          >
+            Join Family
+          </button>
           <button onClick={() => navigate('/')} className="btn btn-secondary">
             Home
           </button>
-        </header>
+        </div>
+      </header>
         
         <div className="card">
           <h2 style={{ marginBottom: '15px' }}>Enter Groq API Key</h2>
@@ -169,8 +184,21 @@ const Family = () => {
         borderRadius: '8px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       }}>
-        <h1>Family Insights</h1>
+        <div>
+          <h1>Family Insights</h1>
+          {activeFamily && (
+            <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '16px' }}>
+              Family: <strong style={{ color: '#2196F3' }}>{activeFamily.name}</strong>
+            </p>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => navigate('/join-family')} 
+            className="btn btn-primary"
+          >
+            Join Family
+          </button>
           <button 
             onClick={() => {
               // Clear user-specific API key

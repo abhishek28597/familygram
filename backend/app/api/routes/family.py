@@ -7,11 +7,191 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, Post, Message
-from app.auth import get_current_user
+from app.models import User, Post, Message, Family, UserFamily
+from app.auth import get_current_user, get_current_family_id
 from app.services.llm_service import GroqLLMService
+from app.schemas import FamilyResponse, FamilyCreate
 
 router = APIRouter(prefix="/api/family", tags=["family"])
+
+
+@router.get("", response_model=list[FamilyResponse])
+def get_user_families(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all families the current user belongs to"""
+    user_families = db.query(UserFamily).filter(UserFamily.user_id == current_user.id).all()
+    family_ids = [uf.family_id for uf in user_families]
+    families = db.query(Family).filter(Family.id.in_(family_ids)).all()
+    return [FamilyResponse.model_validate(f) for f in families]
+
+
+@router.get("/check/{family_name}", response_model=dict)
+def check_family_exists(
+    family_name: str,
+    db: Session = Depends(get_db)
+):
+    """Check if a family exists (case-insensitive)"""
+    from sqlalchemy import func
+    
+    normalized_name = family_name.lower()
+    
+    # Try exact match first
+    family = db.query(Family).filter(Family.name == family_name).first()
+    if not family:
+        # Try case-insensitive match
+        family = db.query(Family).filter(func.lower(Family.name) == normalized_name).first()
+    
+    return {
+        "exists": family is not None,
+        "family": FamilyResponse.model_validate(family) if family else None
+    }
+
+
+@router.post("", response_model=FamilyResponse, status_code=status.HTTP_201_CREATED)
+def create_family(
+    family_data: FamilyCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new family and automatically join it (case-insensitive check)"""
+    from sqlalchemy import func
+    
+    # Normalize family name for case-insensitive matching
+    normalized_name = family_data.name.lower()
+    
+    # Check if family already exists (case-insensitive)
+    existing_family = db.query(Family).filter(Family.name == family_data.name).first()
+    if not existing_family:
+        existing_family = db.query(Family).filter(func.lower(Family.name) == normalized_name).first()
+    
+    if existing_family:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Family with this name already exists"
+        )
+    
+    # Create family
+    family = Family(name=family_data.name)
+    db.add(family)
+    db.flush()
+    
+    # Join the family
+    user_family = UserFamily(user_id=current_user.id, family_id=family.id)
+    db.add(user_family)
+    db.commit()
+    db.refresh(family)
+    
+    return FamilyResponse.model_validate(family)
+
+
+@router.post("/{family_id}/join", response_model=FamilyResponse)
+def join_family(
+    family_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Join an existing family by ID"""
+    # Verify family exists
+    family = db.query(Family).filter(Family.id == family_id).first()
+    if not family:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Family not found"
+        )
+    
+    # Check if user is already a member
+    existing_membership = db.query(UserFamily).filter(
+        UserFamily.user_id == current_user.id,
+        UserFamily.family_id == family_id
+    ).first()
+    if existing_membership:
+        return FamilyResponse.model_validate(family)
+    
+    # Join the family
+    user_family = UserFamily(user_id=current_user.id, family_id=family_id)
+    db.add(user_family)
+    db.commit()
+    
+    return FamilyResponse.model_validate(family)
+
+
+@router.post("/join-by-name", response_model=FamilyResponse)
+def join_family_by_name(
+    family_data: FamilyCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Join a family by name, creating it if it doesn't exist (case-insensitive)"""
+    from sqlalchemy import func
+    
+    # Normalize family name for case-insensitive matching
+    normalized_name = family_data.name.lower()
+    
+    # Check if family exists (case-insensitive)
+    # First try exact match
+    family = db.query(Family).filter(Family.name == family_data.name).first()
+    if not family:
+        # Try case-insensitive match
+        family = db.query(Family).filter(func.lower(Family.name) == normalized_name).first()
+    
+    if not family:
+        # Create family if it doesn't exist (use the exact name provided)
+        family = Family(name=family_data.name)
+        db.add(family)
+        db.flush()
+    
+    # Check if user is already a member
+    existing_membership = db.query(UserFamily).filter(
+        UserFamily.user_id == current_user.id,
+        UserFamily.family_id == family.id
+    ).first()
+    if existing_membership:
+        return FamilyResponse.model_validate(family)
+    
+    # Join the family
+    user_family = UserFamily(user_id=current_user.id, family_id=family.id)
+    db.add(user_family)
+    db.commit()
+    db.refresh(family)
+    
+    return FamilyResponse.model_validate(family)
+
+
+@router.get("/{family_id}/members", response_model=list[dict])
+def get_family_members(
+    family_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all members of a family (only if current user is a member)"""
+    # Verify user is a member of this family
+    user_family = db.query(UserFamily).filter(
+        UserFamily.user_id == current_user.id,
+        UserFamily.family_id == family_id
+    ).first()
+    
+    if not user_family:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this family"
+        )
+    
+    # Get all members
+    user_families = db.query(UserFamily).filter(UserFamily.family_id == family_id).all()
+    user_ids = [uf.user_id for uf in user_families]
+    users = db.query(User).filter(User.id.in_(user_ids)).all()
+    
+    return [
+        {
+            "id": str(user.id),
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email
+        }
+        for user in users
+    ]
 
 
 class GroqApiKeyRequest(BaseModel):
@@ -40,7 +220,8 @@ class UserSummaryResponse(BaseModel):
 def get_family_summary(
     request: GroqApiKeyRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
     """
     Generate daily summary of all family posts
@@ -52,16 +233,19 @@ def get_family_summary(
         start_datetime = datetime.combine(target_date, datetime.min.time())
         end_datetime = datetime.combine(target_date, datetime.max.time())
         
-        # Get all posts from the day
+        # Get all posts from the day in the current family
         posts = db.query(Post).filter(
             and_(
+                Post.family_id == family_id,
                 Post.created_at >= start_datetime,
                 Post.created_at <= end_datetime
             )
         ).order_by(Post.created_at.desc()).all()
         
-        # Get all users
-        users = db.query(User).all()
+        # Get all users in this family
+        user_families = db.query(UserFamily).filter(UserFamily.family_id == family_id).all()
+        user_ids = [uf.user_id for uf in user_families]
+        users = db.query(User).filter(User.id.in_(user_ids)).all()
         
         # Format posts for LLM
         posts_data = []
@@ -106,7 +290,8 @@ def get_user_summary(
     user_id: UUID,
     request: GroqApiKeyRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
     """
     Get individual user's daily summary and sentiment analysis
@@ -114,7 +299,7 @@ def get_user_summary(
     Sentiment is returned as free text description (not a score)
     """
     try:
-        # Verify user exists
+        # Verify user exists and is in the same family
         target_user = db.query(User).filter(User.id == user_id).first()
         if not target_user:
             raise HTTPException(
@@ -122,23 +307,36 @@ def get_user_summary(
                 detail="User not found"
             )
         
+        # Verify target user is in the same family
+        target_user_family = db.query(UserFamily).filter(
+            UserFamily.user_id == user_id,
+            UserFamily.family_id == family_id
+        ).first()
+        if not target_user_family:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User is not a member of this family"
+            )
+        
         # Parse date or use today
         target_date = datetime.strptime(request.date, "%Y-%m-%d").date() if request.date else date.today()
         start_datetime = datetime.combine(target_date, datetime.min.time())
         end_datetime = datetime.combine(target_date, datetime.max.time())
         
-        # Get user's posts from the day
+        # Get user's posts from the day in this family
         user_posts = db.query(Post).filter(
             and_(
+                Post.family_id == family_id,
                 Post.user_id == user_id,
                 Post.created_at >= start_datetime,
                 Post.created_at <= end_datetime
             )
         ).order_by(Post.created_at.desc()).all()
         
-        # Get messages between current user and target user from the day
+        # Get messages between current user and target user from the day in this family
         messages = db.query(Message).filter(
             and_(
+                Message.family_id == family_id,
                 Message.created_at >= start_datetime,
                 Message.created_at <= end_datetime,
                 (

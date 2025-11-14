@@ -13,6 +13,37 @@ class ReactionType(enum.Enum):
     DISLIKE = "dislike"
 
 
+class Family(Base):
+    __tablename__ = "families"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), unique=True, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    user_families = relationship("UserFamily", back_populates="family", cascade="all, delete-orphan")
+    posts = relationship("Post", back_populates="family", cascade="all, delete-orphan")
+    messages = relationship("Message", back_populates="family", cascade="all, delete-orphan")
+
+
+class UserFamily(Base):
+    __tablename__ = "user_families"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    family_id = Column(UUID(as_uuid=True), ForeignKey("families.id"), nullable=False, index=True)
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="user_families")
+    family = relationship("Family", back_populates="user_families")
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'family_id', name='unique_user_family'),
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -26,6 +57,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
+    user_families = relationship("UserFamily", back_populates="user", cascade="all, delete-orphan")
     posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
     reactions = relationship("PostReaction", back_populates="user", cascade="all, delete-orphan")
@@ -38,6 +70,7 @@ class Post(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    family_id = Column(UUID(as_uuid=True), ForeignKey("families.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -47,6 +80,7 @@ class Post(Base):
 
     # Relationships
     user = relationship("User", back_populates="posts")
+    family = relationship("Family", back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan", order_by="Comment.created_at")
     reactions = relationship("PostReaction", back_populates="post", cascade="all, delete-orphan")
 
@@ -90,6 +124,7 @@ class Message(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sender_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     recipient_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    family_id = Column(UUID(as_uuid=True), ForeignKey("families.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
@@ -97,4 +132,5 @@ class Message(Base):
     # Relationships
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
     recipient = relationship("User", foreign_keys=[recipient_id], back_populates="received_messages")
+    family = relationship("Family", back_populates="messages")
 

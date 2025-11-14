@@ -5,7 +5,7 @@ import { postsAPI, searchAPI } from '../services/api';
 import Post from '../components/Post/Post';
 
 const Home = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, activeFamily } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,11 @@ const Home = () => {
         <h1>Family Gram</h1>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <span>Welcome, {user?.username}!</span>
+          {activeFamily && (
+            <span style={{ padding: '5px 10px', backgroundColor: '#e3f2fd', borderRadius: '4px', fontSize: '14px' }}>
+              Family: {activeFamily.name}
+            </span>
+          )}
           <button onClick={() => navigate(`/profile/${user?.id}`)} className="btn btn-secondary">
             Profile
           </button>

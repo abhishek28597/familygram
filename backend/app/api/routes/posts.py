@@ -6,20 +6,34 @@ from uuid import UUID
 from app.database import get_db
 from app.models import User, Post, PostReaction, ReactionType
 from app.schemas import PostCreate, PostUpdate, PostResponse, ReactionResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_family_id
 
 router = APIRouter(prefix="/api/posts", tags=["posts"])
 
 
 @router.get("", response_model=list[PostResponse])
-def get_posts(db: Session = Depends(get_db), skip: int = 0, limit: int = 50):
-    posts = db.query(Post).order_by(Post.created_at.desc()).offset(skip).limit(limit).all()
+def get_posts(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 50,
+    family_id: UUID = Depends(get_current_family_id)
+):
+    posts = db.query(Post).filter(
+        Post.family_id == family_id
+    ).order_by(Post.created_at.desc()).offset(skip).limit(limit).all()
     return posts
 
 
 @router.get("/{post_id}", response_model=PostResponse)
-def get_post(post_id: UUID, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.id == post_id).first()
+def get_post(
+    post_id: UUID,
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -32,10 +46,12 @@ def get_post(post_id: UUID, db: Session = Depends(get_db)):
 def create_post(
     post_data: PostCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
     db_post = Post(
         user_id=current_user.id,
+        family_id=family_id,
         content=post_data.content
     )
     db.add(db_post)
@@ -49,9 +65,13 @@ def update_post(
     post_id: UUID,
     post_data: PostUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -74,9 +94,13 @@ def update_post(
 def delete_post(
     post_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -98,9 +122,13 @@ def delete_post(
 def like_post(
     post_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -143,9 +171,13 @@ def like_post(
 def dislike_post(
     post_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -188,9 +220,13 @@ def dislike_post(
 def remove_reaction(
     post_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

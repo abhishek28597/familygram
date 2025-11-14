@@ -5,14 +5,21 @@ from uuid import UUID
 from app.database import get_db
 from app.models import User, Post, Comment
 from app.schemas import CommentCreate, CommentUpdate, CommentResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_family_id
 
 router = APIRouter(prefix="/api", tags=["comments"])
 
 
 @router.get("/posts/{post_id}/comments", response_model=list[CommentResponse])
-def get_comments(post_id: UUID, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.id == post_id).first()
+def get_comments(
+    post_id: UUID,
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -28,9 +35,13 @@ def create_comment(
     post_id: UUID,
     comment_data: CommentCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = db.query(Post).filter(
+        Post.id == post_id,
+        Post.family_id == family_id
+    ).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,13 +65,25 @@ def update_comment(
     comment_id: UUID,
     comment_data: CommentUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment not found"
+        )
+    
+    # Verify post belongs to active family
+    post = db.query(Post).filter(
+        Post.id == comment.post_id,
+        Post.family_id == family_id
+    ).first()
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
         )
     
     if comment.user_id != current_user.id:
@@ -79,13 +102,25 @@ def update_comment(
 def delete_comment(
     comment_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    family_id: UUID = Depends(get_current_family_id)
 ):
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment not found"
+        )
+    
+    # Verify post belongs to active family
+    post = db.query(Post).filter(
+        Post.id == comment.post_id,
+        Post.family_id == family_id
+    ).first()
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
         )
     
     if comment.user_id != current_user.id:
@@ -95,9 +130,7 @@ def delete_comment(
         )
     
     # Update post comment count
-    post = db.query(Post).filter(Post.id == comment.post_id).first()
-    if post:
-        post.comments_count -= 1
+    post.comments_count -= 1
     
     db.delete(comment)
     db.commit()

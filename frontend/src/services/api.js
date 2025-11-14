@@ -39,17 +39,21 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   signup: (data) => api.post('/api/auth/signup', data),
-  login: (username, password) => {
+  login: (username, password, familyId = null) => {
     const formData = new FormData();
     formData.append('username', username);
     formData.append('password', password);
-    return api.post('/api/auth/login', formData, {
+    const url = familyId 
+      ? `/api/auth/login?family_id=${familyId}`
+      : '/api/auth/login';
+    return api.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
   },
   getMe: () => api.get('/api/auth/me'),
+  selectFamily: (familyId) => api.post('/api/auth/select-family', { family_id: familyId }),
 };
 
 // Users API
@@ -96,6 +100,12 @@ export const messagesAPI = {
 
 // Family API
 export const familyAPI = {
+  getFamilies: () => api.get('/api/family'),
+  checkFamilyExists: (name) => api.get(`/api/family/check/${encodeURIComponent(name)}`),
+  createFamily: (name) => api.post('/api/family', { name }),
+  joinFamily: (familyId) => api.post(`/api/family/${familyId}/join`),
+  joinFamilyByName: (name) => api.post('/api/family/join-by-name', { name }),
+  getFamilyMembers: (familyId) => api.get(`/api/family/${familyId}/members`),
   getFamilySummary: (groqApiKey, date = null) => {
     const body = { groq_api_key: groqApiKey };
     if (date) body.date = date;

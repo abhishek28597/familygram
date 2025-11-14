@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Inbox from './pages/Inbox';
 import Family from './pages/Family';
+import JoinFamily from './pages/JoinFamily';
 import './index.css';
 
 const PrivateRoute = ({ children }) => {
@@ -38,6 +39,7 @@ function AppRoutes() {
       <Route path="/profile/:userId?" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/inbox" element={<PrivateRoute><Inbox /></PrivateRoute>} />
       <Route path="/family" element={<PrivateRoute><Family /></PrivateRoute>} />
+      <Route path="/join-family" element={<PrivateRoute><JoinFamily /></PrivateRoute>} />
     </Routes>
   );
 }

@@ -55,6 +55,54 @@ A minimal Twitter-like social media application for small family groups (5-10 us
 
 5. Create your first account by clicking "Sign up" on the login page.
 
+## Database Management
+
+### Cleaning the Database
+
+If you need to start fresh (e.g., after data model changes), you can clean the entire database and recreate all tables with the current schema.
+
+⚠️ **WARNING**: This will delete ALL data in the database!
+
+#### Option 1: Using the shell script (Recommended)
+
+From the project root directory:
+
+```bash
+./scripts/clean_db.sh
+```
+
+#### Option 2: Using docker-compose exec directly
+
+```bash
+docker-compose exec backend python /app/scripts/clean_db.py
+```
+
+#### Option 3: Running locally (if not using Docker)
+
+```bash
+cd backend
+python scripts/clean_db.py
+```
+
+The script will:
+1. Drop all existing tables
+2. Recreate all tables using the current SQLAlchemy models
+3. Verify that tables were created successfully
+
+**Note**: Make sure the backend container is running before executing the cleanup script.
+
+### Cleaning Render Production Database
+
+For cleaning the Render production database after data model changes, see the [Deployment Guide](./docs/deployment-guide.md#database-cleanup-on-render) for automated options using GitHub Actions.
+
+Quick method:
+1. Go to GitHub → **Actions** → **Cleanup Render Database**
+2. Click **Run workflow**
+3. Type `CLEAN_DB` in the confirmation field
+4. Click **Run workflow**
+
+⚠️ **WARNING**: This will delete ALL data in your Render database!
+
 ### Development (Without Docker)
 
 For local development without Docker, you'll need to set up the database and environment variables:
