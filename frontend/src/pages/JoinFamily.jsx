@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { familyAPI, authAPI } from '../services/api';
+import Navigation from '../components/Navigation/Navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const JoinFamily = () => {
   const { user, families, activeFamily, selectFamily, refreshFamilies } = useAuth();
@@ -39,23 +41,19 @@ const JoinFamily = () => {
 
     const trimmedName = familyName.trim();
     
-    // Check if family exists
     setLoading(true);
     try {
       const checkResponse = await familyAPI.checkFamilyExists(trimmedName);
       
       if (!checkResponse.data.exists) {
-        // Family doesn't exist, show confirmation
         setPendingFamilyName(trimmedName);
         setShowConfirmDialog(true);
         setLoading(false);
         return;
       } else {
-        // Family exists, proceed with joining
         await proceedWithJoin(trimmedName);
       }
     } catch (error) {
-      // If check fails, assume family doesn't exist and show confirmation
       setPendingFamilyName(trimmedName);
       setShowConfirmDialog(true);
       setLoading(false);
@@ -73,9 +71,7 @@ const JoinFamily = () => {
       setSuccess(`Successfully joined family: ${response.data.name}`);
       setFamilyName('');
       setPendingFamilyName('');
-      // Reload families list
       await loadUserFamilies();
-      // Refresh auth context families
       if (refreshFamilies) {
         await refreshFamilies();
       }
@@ -102,7 +98,6 @@ const JoinFamily = () => {
       const result = await selectFamily(familyId);
       if (result.success) {
         setSuccess('Family switched successfully! Redirecting...');
-        // Reload page to refresh data with new family context
         setTimeout(() => {
           window.location.reload();
         }, 1000);
@@ -117,149 +112,225 @@ const JoinFamily = () => {
   };
 
   return (
-    <div className="container">
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        padding: '15px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      }}>
-        <h1>Join Family</h1>
-        <button onClick={() => navigate('/')} className="btn btn-secondary">
-          Home
-        </button>
-      </header>
-
-      {error && (
-        <div className="card" style={{ marginBottom: '20px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb' }}>
-          <p style={{ color: '#721c24', margin: 0 }}>{error}</p>
-        </div>
-      )}
-
-      {success && (
-        <div className="card" style={{ marginBottom: '20px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb' }}>
-          <p style={{ color: '#155724', margin: 0 }}>{success}</p>
-        </div>
-      )}
-
-      <div className="card" style={{ marginBottom: '20px' }}>
-        <h2 style={{ marginBottom: '15px' }}>Join a Family</h2>
-        <p style={{ marginBottom: '15px', color: '#666' }}>
-          Enter a family name to join. If the family doesn't exist, it will be created automatically.
-        </p>
-        <form onSubmit={handleJoinByName}>
-          <div className="form-group">
-            <label>Family Name</label>
-            <input
-              type="text"
-              value={familyName}
-              onChange={(e) => setFamilyName(e.target.value)}
-              placeholder="Enter family name"
-              required
-            />
-          </div>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={loading}
-          >
-            {loading ? 'Joining...' : 'Join Family'}
-          </button>
-        </form>
-      </div>
-
-      <div className="card">
-        <h2 style={{ marginBottom: '15px' }}>Your Families</h2>
-        <p style={{ marginBottom: '15px', color: '#666' }}>
-          You are currently a member of {userFamilies.length} family/families. 
-          {activeFamily && (
-            <span style={{ display: 'block', marginTop: '5px', fontWeight: 'bold' }}>
-              Active Family: {activeFamily.name}
-            </span>
+    <>
+      <Navigation />
+      <div className="container" style={{ paddingTop: 'var(--spacing-xl)' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {error && (
+            <motion.div
+              className="card"
+              style={{ 
+                marginBottom: 'var(--spacing-lg)', 
+                backgroundColor: '#F8D7DA',
+                border: '2px solid var(--error)'
+              }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <p style={{ color: '#721C24', margin: 0 }}>{error}</p>
+            </motion.div>
           )}
-        </p>
-        
-        {userFamilies.length === 0 ? (
-          <p style={{ color: '#666' }}>You are not a member of any families yet.</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px', marginTop: '15px' }}>
-            {userFamilies.map((family) => (
-              <div 
-                key={family.id} 
-                className="card"
-                style={{ 
-                  padding: '15px',
-                  backgroundColor: activeFamily?.id === family.id ? '#e3f2fd' : 'white',
-                  border: activeFamily?.id === family.id ? '2px solid #2196F3' : '1px solid #ddd',
-                }}
-              >
-                <h3 style={{ marginBottom: '10px' }}>{family.name}</h3>
-                {activeFamily?.id === family.id ? (
-                  <p style={{ color: '#2196F3', fontWeight: 'bold', margin: 0 }}>Currently Active</p>
-                ) : (
-                  <button 
-                    onClick={() => handleSwitchFamily(family.id)}
-                    className="btn btn-primary"
-                    style={{ marginTop: '10px', width: '100%' }}
-                    disabled={loading}
-                  >
-                    {loading ? 'Switching...' : 'Switch to This Family'}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}>
-          <div className="card" style={{ maxWidth: '500px', width: '90%', padding: '20px' }}>
-            <h2 style={{ marginBottom: '15px' }}>Create New Family?</h2>
-            <p style={{ marginBottom: '15px', color: '#666' }}>
-              The family "<strong>{pendingFamilyName}</strong>" doesn't exist.
+          {success && (
+            <motion.div
+              className="card"
+              style={{ 
+                marginBottom: 'var(--spacing-lg)', 
+                backgroundColor: '#D4EDDA',
+                border: '2px solid var(--success)'
+              }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <p style={{ color: '#155724', margin: 0 }}>{success}</p>
+            </motion.div>
+          )}
+
+          {/* Join Family Section */}
+          <motion.div
+            className="card"
+            style={{ marginBottom: 'var(--spacing-lg)' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h1 style={{ marginBottom: 'var(--spacing-md)', fontFamily: 'var(--font-display)' }}>
+              Join a Family
+            </h1>
+            <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              Enter a family name to join. If the family doesn't exist, it will be created automatically.
             </p>
-            <p style={{ marginBottom: '20px', color: '#666' }}>
-              Do you want to create this family and join it?
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleCancelCreate}
-                className="btn btn-secondary"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmCreate}
+            <form onSubmit={handleJoinByName}>
+              <div className="form-group">
+                <label>Family Name</label>
+                <input
+                  type="text"
+                  value={familyName}
+                  onChange={(e) => setFamilyName(e.target.value)}
+                  placeholder="Enter family name"
+                  required
+                />
+              </div>
+              <button 
+                type="submit" 
                 className="btn btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Creating...' : 'Yes, Create Family'}
+                {loading ? 'Joining...' : 'Join Family'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </form>
+          </motion.div>
+
+          {/* Your Families Section */}
+          <motion.div
+            className="card"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 style={{ marginBottom: 'var(--spacing-md)', fontFamily: 'var(--font-display)' }}>
+              Your Families
+            </h2>
+            <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)' }}>
+              You are currently a member of {userFamilies.length} family/families.
+              {activeFamily && (
+                <span style={{ 
+                  display: 'block', 
+                  marginTop: 'var(--spacing-sm)', 
+                  fontWeight: 600,
+                  color: 'var(--text-primary)'
+                }}>
+                  Active Family: <span style={{ color: 'var(--primary)' }}>{activeFamily.name}</span>
+                </span>
+              )}
+            </p>
+            
+            {userFamilies.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 'var(--spacing-xl)' }}>
+                You are not a member of any families yet.
+              </p>
+            ) : (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                gap: 'var(--spacing-lg)', 
+                marginTop: 'var(--spacing-lg)'
+              }}>
+                {userFamilies.map((family, index) => (
+                  <motion.div
+                    key={family.id}
+                    className="card"
+                    style={{ 
+                      padding: 'var(--spacing-lg)',
+                      backgroundColor: activeFamily?.id === family.id ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                      border: activeFamily?.id === family.id ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+                      textAlign: 'center'
+                    }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                    whileHover={{ scale: 1.02, boxShadow: 'var(--shadow-xl)' }}
+                  >
+                    <h3 style={{ 
+                      marginBottom: 'var(--spacing-md)',
+                      fontFamily: 'var(--font-display)'
+                    }}>
+                      {family.name}
+                    </h3>
+                    {activeFamily?.id === family.id ? (
+                      <p style={{ 
+                        color: 'var(--primary)', 
+                        fontWeight: 600, 
+                        margin: 0,
+                        padding: 'var(--spacing-sm)',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        borderRadius: 'var(--radius-md)'
+                      }}>
+                        Currently Active
+                      </p>
+                    ) : (
+                      <motion.button
+                        onClick={() => handleSwitchFamily(family.id)}
+                        className="btn btn-primary"
+                        style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
+                        disabled={loading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {loading ? 'Switching...' : 'Switch to This Family'}
+                      </motion.button>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Confirmation Dialog */}
+          <AnimatePresence>
+            {showConfirmDialog && (
+              <motion.div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 1000,
+                  padding: 'var(--spacing-lg)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="card"
+                  style={{ maxWidth: '500px', width: '100%' }}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                >
+                  <h2 style={{ marginBottom: 'var(--spacing-md)', fontFamily: 'var(--font-display)' }}>
+                    Create New Family?
+                  </h2>
+                  <p style={{ marginBottom: 'var(--spacing-md)', color: 'var(--text-secondary)' }}>
+                    The family "<strong style={{ color: 'var(--text-primary)' }}>{pendingFamilyName}</strong>" doesn't exist.
+                  </p>
+                  <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)' }}>
+                    Do you want to create this family and join it?
+                  </p>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleCancelCreate}
+                      className="btn btn-secondary"
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmCreate}
+                      className="btn btn-primary"
+                      disabled={loading}
+                    >
+                      {loading ? 'Creating...' : 'Yes, Create Family'}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </>
   );
 };
 
 export default JoinFamily;
-
