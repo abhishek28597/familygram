@@ -1,12 +1,12 @@
-FROM node:18-alpine AS builder
+FROM node:18 AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (including optional dependencies for rollup)
+RUN npm install --include=optional
 
 # Copy application code
 COPY . .
