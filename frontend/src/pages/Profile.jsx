@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usersAPI } from '../services/api';
 import Post from '../components/Post/Post';
+import Navigation from '../components/Navigation/Navigation';
+import { motion } from 'framer-motion';
 
 const Profile = () => {
   const { userId } = useParams();
@@ -50,112 +52,226 @@ const Profile = () => {
   };
 
   const handleDeletePost = async (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
-    // This will be handled by the Post component's onDelete callback
     await loadProfile();
   };
 
   if (loading) {
-    return <div className="container">Loading...</div>;
+    return (
+      <>
+        <Navigation />
+        <div className="container" style={{ paddingTop: 'var(--spacing-xl)' }}>
+          <div className="loading">Loading profile...</div>
+        </div>
+      </>
+    );
   }
 
   if (!profileUser) {
-    return <div className="container">User not found</div>;
+    return (
+      <>
+        <Navigation />
+        <div className="container" style={{ paddingTop: 'var(--spacing-xl)' }}>
+          <div className="card">
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+              User not found
+            </p>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
-    <div className="container">
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        padding: '15px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      }}>
-        <h1>Profile</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => navigate('/')} className="btn btn-secondary">
-            Home
-          </button>
-          {isOwnProfile && (
-            <button onClick={logout} className="btn btn-secondary">
-              Logout
-            </button>
-          )}
-        </div>
-      </header>
+    <>
+      <Navigation />
+      <div className="container" style={{ paddingTop: 'var(--spacing-xl)' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Profile Header Card */}
+          <motion.div
+            className="card"
+            style={{ marginBottom: 'var(--spacing-lg)' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 'var(--spacing-lg)',
+              marginBottom: 'var(--spacing-lg)'
+            }}>
+              <div style={{
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                background: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '2.5rem',
+                boxShadow: 'var(--shadow-lg)',
+                flexShrink: 0
+              }}>
+                {(profileUser.username || 'U')[0].toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h1 style={{ 
+                  marginBottom: 'var(--spacing-xs)',
+                  fontFamily: 'var(--font-display)'
+                }}>
+                  {profileUser.username}
+                </h1>
+                {profileUser.full_name && (
+                  <p style={{ 
+                    color: 'var(--text-secondary)', 
+                    fontSize: '1.125rem',
+                    marginBottom: 'var(--spacing-sm)'
+                  }}>
+                    {profileUser.full_name}
+                  </p>
+                )}
+                <p style={{ 
+                  color: 'var(--text-tertiary)', 
+                  fontSize: '0.875rem'
+                }}>
+                  Member since {new Date(profileUser.created_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+            </div>
 
-      <div className="card">
-        <div style={{ marginBottom: '20px' }}>
-          <h2>{profileUser.username}</h2>
-          {profileUser.full_name && <p style={{ color: '#666' }}>{profileUser.full_name}</p>}
-          {profileUser.bio && <p style={{ marginTop: '10px' }}>{profileUser.bio}</p>}
-          <p style={{ color: '#666', fontSize: '14px', marginTop: '10px' }}>
-            Member since {new Date(profileUser.created_at).toLocaleDateString()}
-          </p>
-        </div>
-
-        {isOwnProfile && (
-          <div>
-            {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} className="btn btn-primary">
-                Edit Profile
-              </button>
-            ) : (
-              <div>
-                <div className="form-group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    value={editData.full_name}
-                    onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Bio</label>
-                  <textarea
-                    value={editData.bio}
-                    onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                    maxLength={500}
-                    rows="4"
-                  />
-                </div>
-                <button onClick={handleUpdateProfile} className="btn btn-primary" style={{ marginRight: '10px' }}>
-                  Save
-                </button>
-                <button onClick={() => setIsEditing(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
+            {profileUser.bio && !isEditing && (
+              <div style={{
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'var(--bg-tertiary)',
+                borderRadius: 'var(--radius-md)',
+                marginTop: 'var(--spacing-md)'
+              }}>
+                <p style={{ 
+                  margin: 0,
+                  lineHeight: 1.7,
+                  color: 'var(--text-primary)'
+                }}>
+                  {profileUser.bio}
+                </p>
               </div>
             )}
-          </div>
-        )}
-      </div>
 
-      <div style={{ marginTop: '20px' }}>
-        <h2 style={{ marginBottom: '15px' }}>Posts ({posts.length})</h2>
-        {posts.length === 0 ? (
-          <div className="card">
-            <p>No posts yet.</p>
-          </div>
-        ) : (
-          posts.map((post) => (
-            <Post
-              key={post.id}
-              post={post}
-              onUpdate={loadProfile}
-              onDelete={handleDeletePost}
-            />
-          ))
-        )}
+            {isOwnProfile && (
+              <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                {!isEditing ? (
+                  <motion.button
+                    onClick={() => setIsEditing(true)}
+                    className="btn btn-primary"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Edit Profile
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="form-group">
+                      <label>Full Name</label>
+                      <input
+                        type="text"
+                        value={editData.full_name}
+                        onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+                        maxLength={100}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Bio</label>
+                      <textarea
+                        value={editData.bio}
+                        onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                        maxLength={500}
+                        rows="4"
+                      />
+                      <small style={{ color: 'var(--text-tertiary)' }}>
+                        {editData.bio.length}/500 characters
+                      </small>
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+                      <button 
+                        onClick={handleUpdateProfile} 
+                        className="btn btn-primary"
+                      >
+                        Save
+                      </button>
+                      <button 
+                        onClick={() => setIsEditing(false)} 
+                        className="btn btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Posts Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 style={{ 
+              marginBottom: 'var(--spacing-lg)',
+              fontFamily: 'var(--font-display)'
+            }}>
+              Posts ({posts.length})
+            </h2>
+            {posts.length === 0 ? (
+              <motion.div
+                className="card"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <p style={{ 
+                  textAlign: 'center', 
+                  color: 'var(--text-secondary)'
+                }}>
+                  No posts yet.
+                </p>
+              </motion.div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+                {posts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                  >
+                    <Post
+                      post={post}
+                      onUpdate={loadProfile}
+                      onDelete={handleDeletePost}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </>
   );
 };
 
 export default Profile;
-

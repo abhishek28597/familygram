@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -61,7 +62,6 @@ const Signup = () => {
       return;
     }
     
-    // Check which families don't exist
     setLoading(true);
     const { familyAPI } = await import('../services/api');
     const familiesToCheck = [];
@@ -73,20 +73,17 @@ const Signup = () => {
           familiesToCheck.push(familyName);
         }
       } catch (error) {
-        // If check fails, assume family doesn't exist (will be created)
         familiesToCheck.push(familyName);
       }
     }
     
     setLoading(false);
     
-    // If there are families to create, show confirmation
     if (familiesToCheck.length > 0) {
       setFamiliesToCreate(familiesToCheck);
       setPendingFormData(formData);
       setShowConfirmDialog(true);
     } else {
-      // All families exist, proceed with signup
       proceedWithSignup(formData);
     }
   };
@@ -116,9 +113,35 @@ const Signup = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '400px', marginTop: '50px' }}>
-      <div className="card">
-        <h1 style={{ marginBottom: '20px', textAlign: 'center' }}>Sign Up</h1>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: 'var(--spacing-lg)'
+    }}>
+      <motion.div
+        className="card"
+        style={{ maxWidth: '550px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h1 style={{ 
+            marginBottom: 'var(--spacing-xl)', 
+            textAlign: 'center',
+            fontFamily: 'var(--font-display)',
+            color: 'var(--text-primary)'
+          }}>
+            Sign Up
+          </h1>
+        </motion.div>
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username *</label>
@@ -168,11 +191,15 @@ const Signup = () => {
               value={formData.bio}
               onChange={handleChange}
               maxLength={500}
+              rows="3"
             />
+            <small style={{ color: 'var(--text-tertiary)', display: 'block', marginTop: 'var(--spacing-xs)' }}>
+              {formData.bio.length}/500 characters
+            </small>
           </div>
           <div className="form-group">
             <label>Family Names *</label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)' }}>
               <input
                 type="text"
                 value={familyNameInput}
@@ -185,23 +212,26 @@ const Signup = () => {
                 type="button"
                 onClick={handleAddFamily}
                 className="btn btn-secondary"
-                style={{ padding: '8px 16px' }}
               >
                 Add
               </button>
             </div>
             {formData.family_names.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-sm)' }}>
                 {formData.family_names.map((name, index) => (
-                  <span
+                  <motion.span
                     key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      padding: '4px 12px',
-                      backgroundColor: '#e3f2fd',
-                      borderRadius: '16px',
-                      fontSize: '14px',
+                      padding: 'var(--spacing-xs) var(--spacing-md)',
+                      background: 'var(--accent-2)',
+                      color: 'white',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
                     }}
                   >
                     {name}
@@ -209,85 +239,124 @@ const Signup = () => {
                       type="button"
                       onClick={() => handleRemoveFamily(name)}
                       style={{
-                        marginLeft: '8px',
+                        marginLeft: 'var(--spacing-sm)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        fontSize: '16px',
-                        color: '#666',
+                        fontSize: '1.125rem',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        lineHeight: 1,
                       }}
                     >
                       ×
                     </button>
-                  </span>
+                  </motion.span>
                 ))}
               </div>
             )}
-            <small style={{ color: '#666', display: 'block', marginTop: '4px' }}>
+            <small style={{ color: 'var(--text-tertiary)', display: 'block', marginTop: 'var(--spacing-xs)' }}>
               Add at least one family name. Families will be created if they don't exist.
             </small>
           </div>
           {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%' }} 
+            disabled={loading}
+          >
             {loading ? 'Checking...' : 'Sign Up'}
           </button>
         </form>
-        <p style={{ marginTop: '15px', textAlign: 'center' }}>
-          Already have an account? <Link to="/login">Login</Link>
+        
+        <p style={{ marginTop: 'var(--spacing-lg)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          Already have an account?{' '}
+          <Link 
+            to="/login" 
+            style={{ 
+              color: 'var(--primary)', 
+              textDecoration: 'none',
+              fontWeight: 500
+            }}
+          >
+            Login
+          </Link>
         </p>
-      </div>
+      </motion.div>
 
       {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}>
-          <div className="card" style={{ maxWidth: '500px', width: '90%', padding: '20px' }}>
-            <h2 style={{ marginBottom: '15px' }}>Create New Families?</h2>
-            <p style={{ marginBottom: '15px', color: '#666' }}>
-              The following family/families don't exist and will be created:
-            </p>
-            <ul style={{ marginBottom: '20px', paddingLeft: '20px' }}>
-              {familiesToCreate.map((name, index) => (
-                <li key={index} style={{ marginBottom: '8px', fontWeight: 'bold' }}>
-                  "{name}"
-                </li>
-              ))}
-            </ul>
-            <p style={{ marginBottom: '20px', color: '#666', fontSize: '14px' }}>
-              Do you want to proceed with creating these families?
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleCancelCreate}
-                className="btn btn-secondary"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmCreate}
-                className="btn btn-primary"
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Yes, Create Families'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showConfirmDialog && (
+          <motion.div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000,
+              padding: 'var(--spacing-lg)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="card"
+              style={{ maxWidth: '500px', width: '100%' }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <h2 style={{ marginBottom: 'var(--spacing-md)', fontFamily: 'var(--font-display)' }}>
+                Create New Families?
+              </h2>
+              <p style={{ marginBottom: 'var(--spacing-md)', color: 'var(--text-secondary)' }}>
+                The following family/families don't exist and will be created:
+              </p>
+              <ul style={{ marginBottom: 'var(--spacing-lg)', paddingLeft: 'var(--spacing-lg)' }}>
+                {familiesToCreate.map((name, index) => (
+                  <motion.li
+                    key={index}
+                    style={{ marginBottom: 'var(--spacing-sm)', fontWeight: 600, color: 'var(--text-primary)' }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    "{name}"
+                  </motion.li>
+                ))}
+              </ul>
+              <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+                Do you want to proceed with creating these families?
+              </p>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={handleCancelCreate}
+                  className="btn btn-secondary"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmCreate}
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Creating...' : 'Yes, Create Families'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default Signup;
-
