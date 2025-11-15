@@ -3,10 +3,12 @@ FROM node:18 AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
 
-# Install dependencies (including optional dependencies for rollup)
-RUN npm install --include=optional
+# Install dependencies
+# Note: We install rollup platform package explicitly to work around npm optional dependency bug
+RUN npm install && \
+    npm install @rollup/rollup-linux-x64-gnu --save-optional
 
 # Copy application code
 COPY . .
